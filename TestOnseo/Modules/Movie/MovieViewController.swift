@@ -74,7 +74,7 @@ extension MovieViewController: MovieViewControllerProtocol {
     
     func setupData(movie: MovieResponse) {
         DispatchQueue.main.async {
-            if let imageUrl = URL(string: ApiSettings.shared.imagePath + movie.posterPath) {
+            if let imageUrl = URL(string: Requests.imagePath + movie.posterPath) {
                 self.posterImage.sd_setImage(with: imageUrl, completed: nil)
             }
             self.nameLabel.text = "Name: " + movie.title

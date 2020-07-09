@@ -39,15 +39,15 @@ class HttpService {
     }
     
     func internetConnectErr() -> CustomError {
-        return CustomError(localizedDescription: "Houston we have a problem", code: 404)
+        return CustomError(localizedDescription: "Houston we have a problem", code: 402)
     }
     
     func serverError() -> CustomError {
-        return CustomError(localizedDescription: "Houston we have a problem", code: 404)
+        return CustomError(localizedDescription: "Houston we have a problem", code: 500)
     }
     
     func serverSomthWrongError() -> CustomError {
-        return CustomError(localizedDescription: "Houston we have a problem", code: 404)
+        return CustomError(localizedDescription: "Houston we have a problem", code: 500)
     }
     
     func requestError(_ description: String?, _ error: Int?) -> CustomError {
@@ -79,7 +79,7 @@ extension HttpService {
         if let parameters = parameters {
             params = parameters
         }
-        params[ApiSettings.shared.apiKeyTitle] = ApiSettings.shared.apiKeyValue
+        params[Requests.apiKeyTitle] = Requests.apiKeyValue
         query(url,
               method: method,
               parameters: params,
@@ -160,28 +160,6 @@ extension HttpService {
         
         print("Request================")
         print (request)
-    }
-    
-    
-    func parseErrors(_ jResp: Data) -> CustomError? {
-        
-        do {
-            if let json = try JSONSerialization.jsonObject(with: jResp) as? [String: Any] {
-                
-                if let errorShow = json["non_field_errors"] as? [String] {
-                    
-                    if let msg = errorShow.first {
-                        
-                        return CustomError(localizedDescription: msg, code: 404)
-                    }
-                }
-            }
-        }
-        catch {
-            print("Error deserializing JSON: \(error)")
-        }
-        
-        return nil
     }
     
 }

@@ -12,7 +12,7 @@ import Alamofire
 class RestClient: NSObject {
     
     internal var http = HttpService()
-    internal let baseUrl = ApiSettings.shared.baseURL
+    internal let baseUrl = Requests.baseURL
     
     let dataIsNil = CustomError.init(localizedDescription: "Houston we have a problem", code: 0)
     
@@ -24,13 +24,28 @@ class RestClient: NSObject {
         
         guard let data = response as? Data else {
             return resp(nil, error)
-        }
-        
-        
-        if let product = try? JSONDecoder().decode(modelCls.self, from: data) {
             
-            return resp(product, nil)
-        } else {
+        }
+        do {
+            let model = try JSONDecoder().decode(modelCls.self, from: data)
+            return resp(model, nil)
+        } catch let DecodingError.dataCorrupted(context) {
+            print(context)
+            return resp(nil, self.dataIsNil)
+        } catch let DecodingError.keyNotFound(key, context) {
+            print("Key '\(key)' not found:", context.debugDescription)
+            print("codingPath:", context.codingPath)
+            return resp(nil, self.dataIsNil)
+        } catch let DecodingError.valueNotFound(value, context) {
+            print("Value '\(value)' not found:", context.debugDescription)
+            print("codingPath:", context.codingPath)
+            return resp(nil, self.dataIsNil)
+        } catch let DecodingError.typeMismatch(type, context)  {
+            print("Type '\(type)' mismatch:", context.debugDescription)
+            print("codingPath:", context.codingPath)
+            return resp(nil, self.dataIsNil)
+        } catch {
+            print("error: ", error)
             return resp(nil, self.dataIsNil)
         }
     }

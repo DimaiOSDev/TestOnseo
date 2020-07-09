@@ -75,7 +75,7 @@ class MoviesPresenter: MoviesPresenterProtocol {
         cell.display(date: movies[item].releaseDate)
         cell.display(rating: String(movies[item].voteAverage))
         cell.display(description: movies[item].overview)
-        let urlPoster = ApiSettings.shared.imagePath + movies[item].posterPath
+        let urlPoster = Requests.imagePath + movies[item].posterPath
         cell.display(posterImageUrl: urlPoster)
     }
     
