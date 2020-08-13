@@ -69,12 +69,12 @@ extension HttpService {
     }
     
     func queryByApiKey(_ url: URLConvertible,
-                             method: HTTPMethod = .get,
-                             parameters: Parameters? = nil,
-                             encoding: ParameterEncoding = URLEncoding.queryString,
-                             headers: HTTPHeaders? = nil,
-                             queue: QueueQos,
-                             resp: @escaping IdResponseBlock) {
+                       method: HTTPMethod = .get,
+                       parameters: Parameters? = nil,
+                       encoding: ParameterEncoding = URLEncoding.queryString,
+                       headers: HTTPHeaders? = nil,
+                       queue: QueueQos,
+                       resp: @escaping IdResponseBlock) {
         var params: [String : Any] = [:]
         if let parameters = parameters {
             params = parameters
@@ -98,13 +98,13 @@ extension HttpService {
                         queue: QueueQos,
                         resp: @escaping IdResponseBlock) {
         
-        var queueQos = DispatchQueue(label: "queueBackground", qos: .background, attributes: [.concurrent])
+        let queueQos: DispatchQueue
         
         switch queue {
         case QueueQos.defaultQos:
             queueQos = DispatchQueue(label: "queueDefault", qos: .default, attributes: [.concurrent])
-        default:
-            break
+        case QueueQos.background:
+            queueQos = DispatchQueue(label: "queueBackground", qos: .background, attributes: [.concurrent])
         }
         
         if !checkInternetConnect() {
@@ -120,46 +120,24 @@ extension HttpService {
                                  parameters: parameters,
                                  encoding: encoding,
                                  headers: headers
-        ).responseJSON (queue: queueQos) { (response) in
+        ).validate().responseData(queue: queueQos) { (response) in
             
             DispatchQueue.main.async {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
             
-            var statusCode: Int = 0
-            
-            if let code = response.response?.statusCode {
-                statusCode = code
-                print(statusCode)
+            guard let statusCode = response.response?.statusCode else {
+                print("ERROR: Not Found status code")
+                return resp(nil, CustomError(localizedDescription: "Not Found status code", code: 0))
             }
             
             switch response.result {
             case .success(let value):
-                
-                guard let jsonResp = try? JSONSerialization.data(withJSONObject: value, options: []), let jResp = (try? JSONSerialization.jsonObject(with: jsonResp)) else { return }
-                
-                if let dict = jResp as? [String: Any] {
-                    
-                    print(dict)
-                    
-                    if let errorMessage = dict["message"] as? String {
-                        let customError = CustomError(localizedDescription: errorMessage, code: statusCode)
-                        return resp(nil, customError)
-                    }
-                }
-                
-                resp(jsonResp, nil)
-            case .failure:
-                if (response.error as NSError?)?.code == NSURLErrorCancelled {
-                    print("request canceled")
-                } else {
-                    resp(nil, self.serverError())
-                }
+                return resp(value, nil)
+            case .failure(let error):
+                return resp(nil, CustomError(localizedDescription: error.localizedDescription, code: statusCode))
             }
         }
-        
-        print("Request================")
-        print (request)
     }
     
 }
